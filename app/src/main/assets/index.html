@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#166534">
+<title>WARUNG BUMDES V7</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f3f6f8;color:#17202a}
+header{height:64px;background:#166534;color:#fff;padding:11px 18px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:20}
+header h1{margin:0;font-size:20px}header small{opacity:.85}.wrap{display:flex;min-height:calc(100vh - 64px);align-items:stretch}
+aside{width:225px;flex:0 0 225px;background:#fff;border-right:1px solid #e2e8f0;padding:10px;position:sticky;top:64px;height:calc(100vh - 64px);overflow:auto}
+aside button{width:100%;border:0;background:transparent;text-align:left;padding:11px;border-radius:9px;margin:2px 0;cursor:pointer;font-size:14px}
+aside button.active,aside button:hover{background:#dcfce7;color:#166534;font-weight:700}
+main{flex:1 1 auto;width:auto;min-width:0;max-width:1250px;margin:0 auto;padding:18px}.page{display:none}.page.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.card,.panel{background:#fff;border-radius:14px;padding:16px;box-shadow:0 2px 8px #0000000d}.panel{margin-top:14px}
+.label{font-size:12px;color:#64748b}.value{font-size:22px;font-weight:700;margin-top:6px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+label{font-size:13px;color:#475569;display:block}input,select{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-top:5px;background:#fff}
+button.primary{background:#166534;color:#fff;border:0;border-radius:8px;padding:10px 14px;cursor:pointer}.secondary{background:#e2e8f0;color:#1e293b;border:0;border-radius:8px;padding:10px 14px;cursor:pointer}
+.danger{background:#fee2e2;color:#991b1b;border:0;border-radius:8px;padding:9px 12px;cursor:pointer}.muted{color:#64748b}.right{text-align:right}
+table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:9px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:13px;vertical-align:top}th{background:#f8fafc}.pill{padding:4px 7px;border-radius:20px;background:#dcfce7;color:#166534;font-size:11px}.warn{background:#fef3c7;color:#92400e}.bad{background:#fee2e2;color:#991b1b}
+.cart{border:1px solid #e2e8f0;border-radius:10px;padding:10px;margin-top:12px}.cartline{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #eee}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:end}.hidden{display:none!important}.login{min-height:100vh;display:grid;place-items:center;background:#eef2f7}.loginbox{width:min(390px,92%);background:#fff;padding:25px;border-radius:16px;box-shadow:0 8px 30px #0002}.loginbox h2{color:#166534}
+.notice{padding:10px;border-radius:9px;background:#eff6ff;color:#1e40af;margin-top:10px}.receipt{width:80mm;margin:auto;font-family:monospace;background:#fff;padding:10px}
+@media(max-width:760px){
+aside{display:block;position:sticky;top:64px;width:62px;flex:0 0 62px;height:calc(100vh - 64px);padding:7px 5px;background:#fff;border-right:1px solid #e2e8f0;z-index:10}
+aside button{display:block;width:52px;height:48px;padding:8px 2px;font-size:0;text-align:center;white-space:nowrap}
+aside button::first-letter{font-size:21px}
+main{padding:11px;min-width:0}
+header{padding:10px 12px}
+}
+.tablewrap{overflow:auto}.toolbar input,.toolbar select{min-width:150px}
+button:focus,input:focus,select:focus{outline:2px solid #86efac;outline-offset:1px}
+@media(max-width:760px){table{min-width:680px}.toolbar{align-items:stretch}.toolbar>div{width:100%}}
+.stat-good{font-weight:700}.compact{font-size:12px}.toolbar{gap:10px}
+</style>
+</head>
+<body>
+<div id="loginScreen" class="login">
+ <div class="loginbox">
+  <h2>WARUNG BUMDES V7</h2><p class="muted">Sistem Kasir & Manajemen BUMDes</p>
+  <label>Username</label><input id="loginUser" value="admin">
+  <label style="margin-top:10px">Password</label><input id="loginPass" type="password" value="1234">
+  <button class="primary" style="width:100%;margin-top:14px" onclick="doLogin()">Masuk</button>
+  <p class="muted" style="font-size:12px">Demo: Admin <b>admin / 1234</b> · Kasir <b>kasir / 1234</b></p>
+  <p id="loginMsg" class="bad hidden"></p>
+ </div>
+</div>
+
+<div id="app" class="hidden">
+<header><div><h1 id="shopTitle">WARUNG BUMDES</h1><small id="userBadge">V4</small></div><button class="danger" onclick="logout()">Keluar</button></header>
+<div class="wrap">
+<aside id="menu" aria-label="Menu navigasi">
+ <button class="active" data-page="dashboard">🏠 Dashboard</button>
+ <button data-page="kasir">🛒 Kasir</button>
+ <button data-page="produk">📦 Produk</button>
+ <button data-page="pembelian" data-role="Admin">🚚 Pembelian</button>
+ <button data-page="pelanggan">👥 Pelanggan</button>
+ <button data-page="supplier" data-role="Admin">🏭 Supplier</button>
+ <button data-page="keuangan" data-role="Admin">💰 Keuangan</button>
+ <button data-page="laporan">📊 Laporan</button>
+ <button data-page="opname" data-role="Admin">📋 Stock Opname</button>
+ <button data-page="pengguna" data-role="Admin">🔐 Pengguna</button>
+ <button data-page="kas">💳 Buku Kas</button>
+<button data-page="aktivitas" data-role="Admin">🕒 Aktivitas</button>
+<button data-page="pengaturan" data-role="Admin">⚙️ Pengaturan</button>
+</aside>
+
+<main>
+<section id="dashboard" class="page active">
+<h2 id="dashboardTitle">Dashboard</h2>
+<div id="roleNotice" class="notice hidden"></div>
+<div class="cards">
+ <div class="card"><div class="label">Omzet Hari Ini</div><div class="value" id="dOmzet">Rp 0</div></div>
+ <div class="card" data-admin-card><div class="label">Laba Kotor Hari Ini</div><div class="value" id="dGross">Rp 0</div></div>
+ <div class="card" data-admin-card><div class="label">Laba Bersih Hari Ini</div><div class="value" id="dNet">Rp 0</div></div>
+ <div class="card" data-admin-card><div class="label">Kas Bersih</div><div class="value" id="dCash">Rp 0</div></div>
+ <div class="card"><div class="label">Piutang</div><div class="value" id="dDebt">Rp 0</div></div>
+ <div class="card"><div class="label">Stok Menipis</div><div class="value" id="dLow">0</div></div>
+</div>
+<div class="panel"><h3>Penjualan 7 Hari Terakhir</h3><div id="weekTable"></div></div>
+<div class="panel"><h3>Aktivitas Terbaru</h3><div id="activity"></div></div>
+</section>
+
+<section id="kasir" class="page">
+<h2>Kasir</h2><div class="muted" id="cashierRoleInfo"></div>
+<div class="panel">
+ <div class="grid">
+  <div><label>Barcode</label><input id="scanCode" placeholder="Scan / ketik barcode"></div>
+  <div>
+    <label>Produk</label>
+    <input id="saleProductSearch" list="saleProductList" autocomplete="off" placeholder="Cari produk...">
+    <datalist id="saleProductList"></datalist>
+    <select id="saleProduct" class="hidden"></select>
+   </div>
+  <div><label>Jumlah</label><input id="saleQty" type="number" min="1" value="1"></div>
+ </div>
+ <button class="primary" style="margin-top:10px" onclick="scanOrAdd()">+ Tambah ke Keranjang</button>
+ <div id="cart" class="cart"></div>
+ <div class="right" id="cartTotal" style="font-size:22px;font-weight:700;margin-top:10px">Total: Rp 0</div>
+ <div class="grid" style="margin-top:10px">
+  <div><label>Pelanggan</label><select id="saleCustomer"></select></div>
+  <div><label>Metode</label><select id="saleMethod"><option>Tunai</option><option>Transfer</option><option>QRIS</option><option>Kasbon</option></select></div>
+  <div><label>Dibayar</label><input id="salePaid" type="number" value="0"></div>
+ </div>
+ <button class="primary" style="margin-top:10px" onclick="checkout()">Simpan Penjualan</button>
+ <div id="saleMsg"></div>
+</div>
+</section>
+
+<section id="produk" class="page">
+<h2>Produk & Stok</h2><div class="muted">Kasir hanya dapat melihat stok. Perubahan produk dilakukan Admin.</div>
+<div class="panel" id="productAdminPanel">
+<h3>Tambah Produk</h3>
+<div class="grid">
+ <div><label>Barcode</label><input id="pCode"></div><div><label>Nama Produk</label><input id="pName"></div>
+ <div><label>Harga Beli</label><input id="pBuy" type="number"></div><div><label>Harga Jual</label><input id="pSell" type="number"></div>
+ <div><label>Stok Awal</label><input id="pStock" type="number" min="0"></div><div><label>Minimum Stok</label><input id="pMin" type="number" min="0" value="3"></div>
+</div><button class="primary" style="margin-top:10px" onclick="addProduct()">Simpan Produk</button>
+</div>
+<div class="panel">
+ <div class="toolbar">
+  <div style="flex:1;min-width:220px">
+   <label>Cari Produk Pintar</label>
+   <input id="productSearch" autocomplete="off" placeholder="Ketik nama, barcode, atau kata yang mirip...">
+  </div>
+  <button class="secondary" onclick="clearProductSearch()">Bersihkan</button>
+ </div>
+ <div id="productSearchInfo" class="muted compact" style="margin-top:8px"></div>
+</div>
+<div class="panel" id="productTable"></div>
+</section>
+
+<section id="pembelian" class="page">
+<h2>Pembelian / Barang Masuk</h2>
+<div class="panel">
+<div class="grid">
+ <div><label>Produk</label><select id="buyProduct"></select></div>
+ <div><label>Supplier</label><select id="buySupplier"></select></div>
+ <div><label>Jumlah</label><input id="buyQty" type="number" min="1" value="1"></div>
+ <div><label>Harga Beli Satuan</label><input id="buyPrice" type="number"></div>
+</div>
+<button class="primary" style="margin-top:10px" onclick="receiveStock()">Terima Barang</button>
+</div>
+<div class="panel" id="purchaseTable"></div>
+</section>
+
+<section id="pelanggan" class="page">
+<h2>Pelanggan & Piutang</h2>
+<div class="panel"><div class="grid"><div><label>Nama</label><input id="cName"></div><div><label>No. HP</label><input id="cPhone"></div></div><button class="primary" style="margin-top:10px" onclick="addCustomer()">Tambah</button></div>
+<div class="panel" id="customerTable"></div>
+</section>
+
+<section id="supplier" class="page">
+<h2>Supplier</h2>
+<div class="panel"><div class="grid"><div><label>Nama Supplier</label><input id="sName"></div><div><label>Kontak</label><input id="sContact"></div></div><button class="primary" style="margin-top:10px" onclick="addSupplier()">Tambah</button></div>
+<div class="panel" id="supplierTable"></div>
+</section>
+
+<section id="keuangan" class="page">
+<h2>Keuangan</h2>
+<div class="panel">
+<div class="grid"><div><label>Jenis</label><select id="finType"><option>Kas Masuk</option><option>Kas Keluar</option></select></div><div><label>Kategori</label><select id="finCat"><option>Operasional</option><option>Gaji</option><option>Listrik</option><option>Transportasi</option><option>Lainnya</option></select></div><div><label>Keterangan</label><input id="finNote"></div><div><label>Nominal</label><input id="finAmount" type="number"></div></div>
+<button class="primary" style="margin-top:10px" onclick="addFinance()">Simpan</button></div>
+<div class="panel" id="financeTable"></div>
+</section>
+
+<section id="laporan" class="page">
+<h2>Laporan</h2>
+<div class="panel">
+<div class="grid"><div><label>Dari</label><input id="reportFrom" type="date"></div><div><label>Sampai</label><input id="reportTo" type="date"></div><div style="align-self:end"><button class="primary" onclick="showReport()">Tampilkan</button></div></div>
+<div id="reportResult"></div>
+</div>
+</section>
+
+
+<section id="penjualan" class="page">
+<h2>🧾 Riwayat Penjualan</h2>
+<div class="panel">
+ <div class="toolbar">
+  <div style="flex:1;min-width:190px"><label>Cari</label><input id="salesSearch" placeholder="Nama pelanggan, kasir, metode, barang..."></div>
+  <div><label>Dari</label><input id="salesFrom" type="date"></div>
+  <div><label>Sampai</label><input id="salesTo" type="date"></div>
+  <button class="primary" onclick="renderSalesHistory()">Terapkan</button>
+ </div>
+</div>
+<div class="panel" id="salesHistoryTable"></div>
+</section>
+
+<section id="retur" class="page">
+<h2>↩️ Retur Penjualan</h2>
+<div class="notice">Retur mengembalikan stok dan mengurangi omzet. Gunakan nomor transaksi dari Riwayat Penjualan.</div>
+<div class="panel">
+ <div class="grid">
+  <div><label>Transaksi</label><select id="returnTx"></select></div>
+  <div><label>Item</label><select id="returnItem"></select></div>
+  <div><label>Jumlah Retur</label><input id="returnQty" type="number" min="1" value="1"></div>
+ </div>
+ <label style="margin-top:10px">Alasan</label><input id="returnReason" placeholder="Contoh: barang rusak / salah barang">
+ <button class="primary" style="margin-top:10px" onclick="processReturn()">Simpan Retur</button>
+ <div id="returnMsg"></div>
+</div>
+<div class="panel"><h3>Riwayat Retur</h3><div id="returnTable"></div></div>
+</section>
+<section id="opname" class="page">
+<h2>Stock Opname</h2>
+<div class="panel">
+<div class="grid"><div><label>Produk</label><select id="opProduct"></select></div><div><label>Stok Sistem</label><input id="opSystem" readonly></div><div><label>Stok Fisik</label><input id="opPhysical" type="number" min="0"></div></div>
+<button class="primary" style="margin-top:10px" onclick="saveOpname()">Simpan Penyesuaian</button>
+</div>
+<div class="panel"><h3>Riwayat</h3><div id="opTable"></div></div>
+</section>
+
+<section id="pengguna" class="page">
+<h2>Pengguna</h2>
+<div class="notice">Hanya Admin yang dapat mengelola pengguna.</div>
+<div class="panel">
+<div class="grid"><div><label>Username</label><input id="uName"></div><div><label>Password</label><input id="uPass" type="password"></div><div><label>Role</label><select id="uRole"><option>Kasir</option><option>Admin</option></select></div></div>
+<button class="primary" style="margin-top:10px" onclick="addUser()">Tambah Pengguna</button>
+</div>
+<div class="panel" id="userTable"></div>
+</section>
+
+
+<section id="kas" class="page">
+<h2>💳 Buku Kas</h2>
+<div class="muted">Catat dan pantau arus kas BUMDes.</div>
+<div class="panel" id="kasFormPanel">
+<h3>Tambah Transaksi Kas</h3>
+<div class="grid2">
+<div><label>Jenis</label><select id="cashType"><option value="masuk">Kas Masuk</option><option value="keluar">Kas Keluar</option></select></div>
+<div><label>Tanggal</label><input id="cashDate" type="date"></div>
+<div><label>Kategori</label><input id="cashCategory" placeholder="Contoh: Modal, Operasional, Listrik"></div>
+<div><label>Nominal</label><input id="cashAmount" type="number" min="0"></div>
+</div>
+<label>Keterangan</label><input id="cashNote" placeholder="Keterangan transaksi">
+<button class="primary" onclick="addCash()">Simpan Kas</button>
+</div>
+<div class="cards">
+<div class="card"><div class="label">Total Kas Masuk</div><div class="value" id="cashInTotal">Rp 0</div></div>
+<div class="card"><div class="label">Total Kas Keluar</div><div class="value" id="cashOutTotal">Rp 0</div></div>
+<div class="card"><div class="label">Saldo Kas</div><div class="value" id="cashBalance">Rp 0</div></div>
+</div>
+<div class="panel"><h3>Riwayat Buku Kas</h3><button onclick="exportCashCSV()">Export CSV</button><div id="cashTable"></div></div>
+</section>
+
+<section id="aktivitas" class="page">
+<h2>🕒 Riwayat Aktivitas</h2>
+<div class="muted">Catatan aktivitas pengguna di aplikasi.</div>
+<div class="panel"><div id="activityTable"></div></div>
+</section>
+
+<section id="pengaturan" class="page">
+<h2>Pengaturan</h2>
+<div class="panel"><div class="grid"><div><label>Nama BUMDes/Warung</label><input id="setTitle"></div><div><label>Alamat</label><input id="setAddr"></div><div><label>No. HP</label><input id="setPhone"></div></div>
+<button class="primary" style="margin-top:10px" onclick="saveSettings()">Simpan</button>
+<hr><button class="primary" onclick="backup()">Backup JSON</button>
+<label class="primary" style="display:inline-block;cursor:pointer;margin-left:6px">Restore JSON<input id="restoreFile" type="file" accept=".json" hidden onchange="restore(this)"></label>
+<button class="danger" onclick="resetDB()" style="margin-left:6px">Reset Demo</button></div>
+<div class="panel"><b>Catatan:</b> V7 masih memakai penyimpanan lokal browser. Belum terhubung server/cloud. Backup JSON disarankan secara berkala.</div>
+<div class="panel"><b>V7:</b> Dashboard kas memakai arus kas aktual, penjualan tunai otomatis masuk Buku Kas, pembelian stok tercatat sebagai kas keluar, riwayat penjualan bisa dicari/difilter, dan aktivitas pengguna memakai format yang konsisten.</div>
+</section>
+</main></div></div>
+
+<script>
+const KEY='warung_bumdes_v7';
+const defaultDB={
+ settings:{title:'WARUNG BUMDES',addr:'',phone:''},
+ users:[{u:'admin',p:'1234',role:'Admin'},{u:'kasir',p:'1234',role:'Kasir'}],
+ products:[
+  {id:1,code:'899001',name:'Indomie Goreng',buy:2500,sell:3500,stock:20,min:3},
+  {id:2,code:'899002',name:'Kopi Sachet',buy:1200,sell:2000,stock:30,min:5},
+  {id:3,code:'899003',name:'Air Mineral',buy:2500,sell:4000,stock:15,min:3}
+ ],
+ customers:[],suppliers:[],transactions:[],finance:[],purchases:[],opname:[],activity:[]
+};
+let db=JSON.parse(localStorage.getItem(KEY)||'null');
+if(!db){
+  const legacy=JSON.parse(localStorage.getItem('warung_bumdes_v6')||'null')
+    || JSON.parse(localStorage.getItem('warung_bumdes_v4')||'null');
+  db=legacy||structuredClone(defaultDB);
+}
+// Migrasi otomatis: pastikan akun Kasir demo tetap tersedia walaupun data V4 lama sudah tersimpan.
+db.users=db.users||[];
+// Normalisasi akun lama agar role tidak pernah undefined.
+let adminUser=db.users.find(x=>String(x.u).toLowerCase()==='admin');
+if(!adminUser){adminUser={u:'admin',p:'1234',role:'Admin'};db.users.unshift(adminUser);}
+adminUser.u='admin';adminUser.p='1234';adminUser.role='Admin';
+let kasirUser=db.users.find(x=>String(x.u).toLowerCase()==='kasir');
+if(!kasirUser){kasirUser={u:'kasir',p:'1234',role:'Kasir'};db.users.push(kasirUser);}
+kasirUser.u='kasir';kasirUser.p='1234';kasirUser.role='Kasir';
+db.users.forEach(x=>{
+  if(!x.role) x.role=String(x.u).toLowerCase()==='admin'?'Admin':'Kasir';
+});
+db.opname=db.opname||[];db.purchases=db.purchases||[];db.activity=db.activity||[];
+db.cashbook=db.cashbook||[];
+db.cashbook=db.cashbook||[];
+db.returns=db.returns||[];
+db.schemaVersion=7;
+let currentUser=null,cart=[],lastReport=[];
+
+const $=id=>document.getElementById(id);
+const rp=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
+const dateOnly=()=>new Date().toISOString().slice(0,10);
+const save=()=>localStorage.setItem(KEY,JSON.stringify(db));
+function logActivity(action,detail=''){
+  if(!db.activity) db.activity=[];
+  db.activity.unshift({id:Date.now()+Math.random(),date:new Date().toISOString(),user:currentUser?.u||'system',role:currentUser?.role||'',action,detail});
+  if(db.activity.length>500) db.activity=db.activity.slice(0,500);
+  save();
+}
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+save();
+const log=(text,detail='')=>{
+  if(!db.activity) db.activity=[];
+  db.activity.unshift({
+    id:Date.now()+Math.random(), date:new Date().toISOString(),
+    user:currentUser?.u||'system', role:currentUser?.role||'',
+    action:text, detail
+  });
+  db.activity=db.activity.slice(0,500);
+};
+
+function doLogin(){
+ const u=$('loginUser').value.trim(),p=$('loginPass').value;
+ // Emergency demo login fallback if localStorage has an old/corrupt user list.
+ const found=db.users.find(x=>String(x.u).toLowerCase()===u.toLowerCase()&&String(x.p)===String(p))
+   || ((u.toLowerCase()==='admin'&&p==='1234')?{u:'admin',p:'1234',role:'Admin'}:null)
+   || ((u.toLowerCase()==='kasir'&&p==='1234')?{u:'kasir',p:'1234',role:'Kasir'}:null);
+ if(!found){$('loginMsg').textContent='Username atau password salah.';$('loginMsg').classList.remove('hidden');return;}
+ currentUser={...found, role:(found.role|| (String(found.u).toLowerCase()==='admin'?'Admin':'Kasir'))};
+logActivity('Login','Masuk ke aplikasi');
+$('loginMsg').classList.add('hidden');
+$('loginScreen').classList.add('hidden');$('app').classList.remove('hidden');
+ $('userBadge').textContent=`Login: ${currentUser.u} · ${currentUser.role}`;
+ document.querySelectorAll('[data-admin]').forEach(x=>x.classList.toggle('hidden',found.role!=='Admin'));
+ renderAll();
+}
+function logout(){
+ if(currentUser) logActivity('Logout','Keluar dari aplikasi');currentUser=null;$('app').classList.add('hidden');$('loginScreen').classList.remove('hidden');}
+$('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+const canAccessPage = page => {
+ if(!currentUser) return false;
+ if(currentUser.role==='Admin') return true;
+ return ['dashboard','kasir','produk','pelanggan','laporan','penjualan','retur','kas'].includes(page);
+};
+document.querySelectorAll('#menu button').forEach(b=>b.onclick=()=>{
+ if(!canAccessPage(b.dataset.page)) return;
+ document.querySelectorAll('#menu button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+ document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$(b.dataset.page).classList.add('active');
+ renderAll();
+});
+
+function addProduct(){
+ if(currentUser?.role!=='Admin') return alert('Hanya Admin yang dapat menambah produk.');
+ let code=$('pCode').value.trim(),name=$('pName').value.trim(),buy=+$('pBuy').value,sell=+$('pSell').value,stock=+$('pStock').value,min=+$('pMin').value;
+ if(!name||sell<=0||buy<0||stock<0||min<0)return alert('Data produk belum lengkap.');
+ if(code&&db.products.some(p=>p.code===code))return alert('Barcode sudah digunakan.');
+ db.products.push({id:Date.now(),code,name,buy,sell,stock,min});log(`Produk ditambahkan: ${name}`);save();
+ ['pCode','pName','pBuy','pSell','pStock'].forEach(id=>$(id).value='');renderAll();
+}
+function editProduct(id){
+  if(currentUser?.role!=='Admin') return alert('Hanya Admin.');
+  const p=db.products.find(x=>x.id===id); if(!p)return;
+  const name=prompt('Nama produk:',p.name); if(name===null)return;
+  const buy=Number(prompt('Harga beli:',p.buy)); if(!Number.isFinite(buy)||buy<0)return alert('Harga beli tidak valid.');
+  const sell=Number(prompt('Harga jual:',p.sell)); if(!Number.isFinite(sell)||sell<=0)return alert('Harga jual tidak valid.');
+  const min=Number(prompt('Minimum stok:',p.min)); if(!Number.isFinite(min)||min<0)return alert('Minimum stok tidak valid.');
+  p.name=name.trim()||p.name; p.buy=buy; p.sell=sell; p.min=min;
+  log('Produk diubah',`${p.name} · harga/stok minimum diperbarui`); save(); renderAll();
+}
+function deleteProduct(id){
+  if(currentUser?.role!=='Admin') return alert('Hanya Admin.');
+  const p=db.products.find(x=>x.id===id); if(!p)return;
+  if(db.transactions.some(t=>t.items.some(i=>i.name===p.name)) || db.purchases.some(x=>x.product===p.name))
+    return alert('Produk memiliki riwayat transaksi. Gunakan stok 0/minimum, jangan hapus.');
+  if(!confirm('Hapus produk '+p.name+'?')) return;
+  db.products=db.products.filter(x=>x.id!==id);
+  log('Produk dihapus',p.name); save(); renderAll();
+}
+function addCustomer(){let name=$('cName').value.trim();if(!name)return alert('Nama wajib diisi.');db.customers.push({id:Date.now(),name,phone:$('cPhone').value,debt:0});log(`Pelanggan ditambahkan: ${name}`);save();$('cName').value='';$('cPhone').value='';renderAll();}
+function addSupplier(){if(currentUser?.role!=='Admin')return alert('Hanya Admin.');let name=$('sName').value.trim();if(!name)return alert('Nama wajib diisi.');db.suppliers.push({id:Date.now(),name,contact:$('sContact').value});log(`Supplier ditambahkan: ${name}`);save();$('sName').value='';$('sContact').value='';renderAll();}
+
+function receiveStock(){
+ if(currentUser?.role!=='Admin') return alert('Hanya Admin yang dapat mencatat barang masuk.');
+ const p=db.products.find(x=>x.id==$('buyProduct').value),q=+$('buyQty').value,price=+$('buyPrice').value,s=db.suppliers.find(x=>x.id==$('buySupplier').value);
+ if(!p||q<=0||price<0)return alert('Lengkapi data pembelian.');
+ p.stock+=q;p.buy=price;
+ db.purchases.unshift({id:Date.now(),date:new Date().toISOString(),product:p.name,qty:q,price,supplier:s?.name||''});
+ log(`Barang masuk: ${p.name} +${q}`);
+ save();renderAll();alert('Barang masuk tersimpan.');
+}
+
+function scanOrAdd(){
+ let code=$('scanCode').value.trim();
+  let p=code?db.products.find(x=>String(x.code)===code):db.products.find(x=>x.id===$('saleProduct').value);
+  if(!p && !code && $('saleProductSearch')?.value) p=smartProductSearch($('saleProductSearch').value).find(x=>x.p.stock>0)?.p;
+  let q=+$('saleQty').value;
+ if(!p)return alert('Produk tidak ditemukan.');
+ if(q<1||q>p.stock)return alert('Jumlah melebihi stok.');
+ let line=cart.find(x=>x.id===p.id);if(line)line.qty=Math.min(p.stock,line.qty+q);else cart.push({id:p.id,qty:q});
+ $('scanCode').value='';if($('saleProductSearch'))$('saleProductSearch').value='';renderCart();
+  initSmartProductSearch();
+  renderProducts();
+  renderSalesHistory();
+  renderReturnOptions();
+  renderReturns();
+  renderCash();
+  renderActivities();
+}
+$('scanCode').addEventListener('keydown',e=>{if(e.key==='Enter')scanOrAdd();});
+function renderCart(){
+ let total=0;
+ $('cart').innerHTML=cart.length?cart.map(x=>{let p=db.products.find(z=>z.id===x.id),sub=p.sell*x.qty;total+=sub;return `<div class="cartline"><span>${p.name} × ${x.qty}</span><b>${rp(sub)}</b></div>`}).join(''):'<span class="muted">Keranjang kosong.</span>';
+ $('cartTotal').textContent='Total: '+rp(total);
+}
+function checkout(){
+ if(!cart.length)return alert('Keranjang kosong.');
+ let total=cart.reduce((s,x)=>s+db.products.find(p=>p.id===x.id).sell*x.qty,0),method=$('saleMethod').value,paid=+$('salePaid').value;
+ const cust=db.customers.find(c=>c.id==$('saleCustomer').value);
+ if(method==='Kasbon'&&!cust)return alert('Pilih pelanggan untuk transaksi kasbon.');
+ if(method!=='Kasbon'&&paid<total)return alert('Pembayaran kurang.');
+ const items=cart.map(x=>{let p=db.products.find(p=>p.id===x.id);p.stock-=x.qty;return{name:p.name,qty:x.qty,sell:p.sell,buy:p.buy}});
+ if(method==='Kasbon')cust.debt+=total;
+ const tx={id:Date.now(),date:new Date().toISOString(),items,total,method,paid:method==='Kasbon'?0:paid,change:method==='Kasbon'?0:paid-total,customer:cust?.name||'',cashier:currentUser.u};
+ db.transactions.unshift(tx);
+  if(method==='Tunai'){
+    db.cashbook=db.cashbook||[];
+    if(!db.cashbook.some(c=>c.source==='sale'&&c.transactionId===tx.id))
+      db.cashbook.unshift({id:Date.now()+1,date:dateOnly(),type:'masuk',category:'Penjualan Tunai',amount:total,note:`Penjualan tunai oleh ${currentUser.u}`,user:currentUser.u,source:'sale',transactionId:tx.id});
+  }
+  log('Penjualan',`${rp(total)} · ${method} · ${currentUser.u}`);
+ save();cart=[];$('salePaid').value=0;$('saleMsg').innerHTML=`<div class="notice">Transaksi tersimpan. ${method==='Kasbon'?'Piutang: '+rp(total):'Kembalian: '+rp(paid-total)} <button class="primary" onclick="printReceipt(${tx.id})">Cetak Struk</button></div>`;renderAll();renderCart();
+  initSmartProductSearch();
+  renderProducts();
+  renderSalesHistory();
+  renderReturnOptions();
+  renderReturns();
+}
+function printReceipt(id){
+ const t=db.transactions.find(x=>x.id===id);if(!t)return;
+ const w=window.open('','_blank','width=380,height=650');if(!w)return alert('Izinkan pop-up untuk mencetak struk.');
+ const items=t.items.map(i=>`<div>${i.name}<br>${i.qty} x ${rp(i.sell)} = ${rp(i.sell*i.qty)}</div>`).join('');
+ w.document.write(`<html><head><meta charset="utf-8"><title>Struk</title><style>body{font-family:monospace;width:72mm;margin:0;padding:8px}h3{text-align:center;margin:2px}hr{border:0;border-top:1px dashed #333}</style></head><body><h3>${db.settings.title}</h3><div style="text-align:center">${db.settings.addr||''}<br>${db.settings.phone||''}</div><hr>${items}<hr><b>TOTAL ${rp(t.total)}</b><br>Metode: ${t.method}<br>Dibayar: ${rp(t.paid)}<br>Kembali: ${rp(t.change)}<hr><div style="text-align:center">Terima kasih</div><script>window.onload=()=>setTimeout(()=>window.print(),200)<\/script></body></html>`);w.document.close();
+}
+
+function addFinance(){
+ if(currentUser?.role!=='Admin') return alert('Hanya Admin yang dapat mengelola keuangan.');
+ let type=$('finType').value,cat=$('finCat').value,note=$('finNote').value.trim(),amount=+$('finAmount').value;
+ if(!note||amount<=0)return alert('Lengkapi data keuangan.');
+ db.finance.unshift({id:Date.now(),date:new Date().toISOString(),type,category:cat,note,amount});
+ log(`${type}: ${rp(amount)} - ${note}`);save();$('finNote').value='';$('finAmount').value='';renderAll();
+}
+function payDebt(id){
+ let c=db.customers.find(x=>x.id===id);if(!c||c.debt<=0)return;
+ let a=+prompt(`Pembayaran piutang ${c.name}. Sisa ${rp(c.debt)}:`,c.debt);if(!(a>0))return;a=Math.min(a,c.debt);c.debt-=a;
+ db.finance.unshift({id:Date.now(),date:new Date().toISOString(),type:'Kas Masuk',category:'Piutang',note:'Pembayaran piutang - '+c.name,amount:a});
+ log(`Pembayaran piutang ${c.name}: ${rp(a)}`);save();renderAll();
+}
+function saveOpname(){
+ if(currentUser?.role!=='Admin') return alert('Hanya Admin yang dapat melakukan stock opname.');
+ let p=db.products.find(x=>x.id===$('opProduct').value),physical=+$('opPhysical').value;
+ if(!p||physical<0)return alert('Lengkapi stock opname.');
+ let before=p.stock,diff=physical-before;p.stock=physical;
+ db.opname.unshift({date:new Date().toISOString(),product:p.name,before,physical,diff,user:currentUser.u});
+ log(`Stock opname ${p.name}: ${before} → ${physical}`);save();renderAll();alert('Stock opname tersimpan.');
+}
+function addUser(){
+ if(currentUser?.role!=='Admin')return alert('Hanya Admin.');
+ let u=$('uName').value.trim(),p=$('uPass').value,r=$('uRole').value;if(!u||!p)return alert('Username dan password wajib.');
+ if(db.users.some(x=>x.u===u))return alert('Username sudah ada.');
+ db.users.push({u,p,role:r});log(`Pengguna ditambahkan: ${u} (${r})`);save();$('uName').value='';$('uPass').value='';renderAll();
+}
+function deleteUser(u){
+ if(u==='admin')return alert('Akun admin utama tidak dapat dihapus.');
+ if(!confirm('Hapus pengguna '+u+'?'))return;
+ db.users=db.users.filter(x=>x.u!==u);log(`Pengguna dihapus: ${u}`);save();renderAll();
+}
+
+function addCash(){
+  if(currentUser?.role!=='Admin') return alert('Hanya Admin yang dapat mencatat transaksi kas.');
+  const type=$('cashType').value,date=$('cashDate').value||dateOnly(),category=$('cashCategory').value.trim(),amount=Number($('cashAmount').value)||0,note=$('cashNote').value.trim();
+  if(amount<=0) return alert('Nominal harus lebih dari 0.');
+  db.cashbook.unshift({id:Date.now(),date,type,category,amount,note,user:currentUser.u});
+  logActivity(type==='masuk'?'Kas Masuk':'Kas Keluar',`${category||'-'} · ${rp(amount)}`);
+  $('cashAmount').value='';$('cashCategory').value='';$('cashNote').value='';
+  renderAll(); alert('Transaksi kas disimpan.');
+}
+function renderCash(){
+  if(!$('cashInTotal')) return;
+  if($('cashDate') && !$('cashDate').value) $('cashDate').value=dateOnly();
+  const inTotal=db.cashbook.filter(x=>x.type==='masuk').reduce((s,x)=>s+Number(x.amount||0),0);
+  const outTotal=db.cashbook.filter(x=>x.type==='keluar').reduce((s,x)=>s+Number(x.amount||0),0);
+  $('cashInTotal').textContent=rp(inTotal);$('cashOutTotal').textContent=rp(outTotal);$('cashBalance').textContent=rp(inTotal-outTotal);
+  $('cashFormPanel').classList.toggle('hidden',currentUser?.role!=='Admin');
+  $('cashTable').innerHTML=db.cashbook.length?`<div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Jenis</th><th>Kategori</th><th>Nominal</th><th>Keterangan</th><th>User</th></tr></thead><tbody>${db.cashbook.map(x=>`<tr><td>${esc(x.date)}</td><td>${x.type==='masuk'?'Masuk':'Keluar'}</td><td>${esc(x.category)}</td><td>${rp(x.amount)}</td><td>${esc(x.note)}</td><td>${esc(x.user)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">Belum ada transaksi kas.</p>';
+}
+function renderActivities(){
+  if(!$('activityTable')) return;
+  $('activityTable').innerHTML=db.activity.length?`<div class="tablewrap"><table><thead><tr><th>Waktu</th><th>User</th><th>Role</th><th>Aktivitas</th><th>Detail</th></tr></thead><tbody>${db.activity.map(x=>`<tr><td>${new Date(x.date).toLocaleString('id-ID')}</td><td>${esc(x.user)}</td><td>${esc(x.role)}</td><td>${esc(x.action)}</td><td>${esc(x.detail)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">Belum ada aktivitas.</p>';
+}
+function saveSettings(){
+ if(currentUser?.role!=='Admin') return alert('Hanya Admin yang dapat mengubah pengaturan.');
+ db.settings={title:$('setTitle').value||'WARUNG BUMDES',addr:$('setAddr').value,phone:$('setPhone').value};save();renderAll();alert('Pengaturan disimpan.');
+}
+
+function showReport(){
+ if(!currentUser) return;
+ let f=$('reportFrom').value||'0000-01-01',t=$('reportTo').value||'9999-12-31';
+ lastReport=db.transactions.filter(x=>{let d=x.date.slice(0,10);return d>=f&&d<=t});
+ let omzet=lastReport.reduce((s,x)=>s+x.total,0);
+ let gross=lastReport.reduce((s,x)=>s+x.items.reduce((a,i)=>a+(i.sell-i.buy)*i.qty,0),0);
+ let out=db.finance.filter(x=>x.date.slice(0,10)>=f&&x.date.slice(0,10)<=t&&x.type==='Kas Keluar').reduce((s,x)=>s+x.amount,0);
+ let net=gross-out;
+ $('reportResult').innerHTML=`<div class="cards" style="margin-top:14px">
+ <div class="card"><div class="label">Transaksi</div><div class="value">${lastReport.length}</div></div>
+ <div class="card"><div class="label">Omzet Penjualan</div><div class="value">${rp(omzet)}</div></div>
+ ${currentUser.role==='Admin'?`<div class="card"><div class="label">Laba Kotor</div><div class="value">${rp(gross)}</div></div><div class="card"><div class="label">Laba Bersih*</div><div class="value">${rp(net)}</div></div>`:''}
+ </div>
+ ${currentUser.role==='Admin'?'<p class="muted">* Laba bersih sederhana = laba kotor - kas keluar pada periode.</p>':'<p class="muted">Laporan Kasir hanya menampilkan data penjualan dan omzet.</p>'}
+ <div class="toolbar" style="margin-top:10px"><button class="primary" onclick="exportCSV()">Export CSV/Excel</button><button class="secondary" onclick="printReport()">Cetak / PDF</button></div>
+ <table><tr><th>Tanggal</th><th>Barang</th><th>Metode</th><th>Pelanggan</th><th>Total</th></tr>${lastReport.map(x=>`<tr><td>${new Date(x.date).toLocaleString('id-ID')}</td><td>${x.items.map(i=>i.name+' × '+i.qty).join('<br>')}</td><td>${x.method}</td><td>${x.customer||'-'}</td><td>${rp(x.total)}</td></tr>`).join('')||'<tr><td colspan="5">Tidak ada transaksi.</td></tr>'}</table>`;
+}
+function exportCSV(){
+ let rows=[['Tanggal','Barang','Metode','Pelanggan','Total','Kasir']];
+ lastReport.forEach(x=>rows.push([new Date(x.date).toLocaleString('id-ID'),x.items.map(i=>i.name+' x '+i.qty).join(' | '),x.method,x.customer||'',x.total,x.cashier||'']));
+ let csv=rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n');
+ let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='laporan-warung-bumdes-v7.csv';a.click();
+}
+
+function exportCashCSV(){
+ const rows=[['Tanggal','Jenis','Kategori','Nominal','Keterangan','User'],...db.cashbook.map(x=>[x.date,x.type,x.category,x.amount,x.note,x.user])];
+ const csv=rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='buku-kas.csv';a.click();URL.revokeObjectURL(a.href);
+}
+function printReport(){
+ if(!currentUser) return;
+ let f=$('reportFrom').value||'',t=$('reportTo').value||'',data=lastReport||[],omzet=data.reduce((s,x)=>s+x.total,0),gross=data.reduce((s,x)=>s+x.items.reduce((a,i)=>a+(i.sell-i.buy)*i.qty,0),0);
+ let w=window.open('','_blank','width=900,height=700');if(!w)return alert('Izinkan pop-up untuk cetak/PDF.');
+ let rows=data.map(x=>`<tr><td>${new Date(x.date).toLocaleString('id-ID')}</td><td>${x.items.map(i=>i.name+' × '+i.qty).join('<br>')}</td><td>${x.method}</td><td>${x.customer||'-'}</td><td>${rp(x.total)}</td></tr>`).join('');
+ w.document.write(`<html><head><meta charset="utf-8"><title>Laporan</title><style>@page{size:A4;margin:15mm}body{font-family:Arial;color:#111}h1{margin:0}.meta{color:#666;font-size:12px;margin:6px 0 18px}.cards{display:flex;gap:10px}.card{border:1px solid #ddd;padding:10px;flex:1}.label{font-size:11px;color:#666}.value{font-size:18px;font-weight:bold;margin-top:4px}table{width:100%;border-collapse:collapse;margin-top:18px;font-size:11px}th,td{border:1px solid #ccc;padding:6px}th{background:#f3f4f6}</style></head><body><h1>${db.settings.title}</h1><div class="meta">${db.settings.addr||''}<br>Laporan ${f} s/d ${t}</div><div class="cards"><div class="card"><div class="label">Transaksi</div><div class="value">${data.length}</div></div><div class="card"><div class="label">Omzet</div><div class="value">${rp(omzet)}</div></div><div class="card"><div class="label">Laba Kotor</div><div class="value">${rp(gross)}</div></div></div><table><tr><th>Tanggal</th><th>Barang</th><th>Metode</th><th>Pelanggan</th><th>Total</th></tr>${rows||'<tr><td colspan="5">Tidak ada transaksi.</td></tr>'}</table><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>`);
+ w.document.close();
+}
+function backup(){db.schemaVersion=7;save();let b=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='backup-warung-bumdes-v7.json';a.click();}
+function restore(input){let f=input.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!x.products||!x.users)throw Error();
+      x.returns=x.returns||[];x.cashbook=x.cashbook||[];x.activity=x.activity||[];x.schemaVersion=7;
+      db=x;save();renderAll();alert('Restore berhasil.')}catch(e){alert('Backup tidak valid.')}};r.readAsText(f);}
+function resetDB(){if(confirm('Reset semua data ke demo V6?')){localStorage.removeItem(KEY);localStorage.removeItem('warung_bumdes_v6');localStorage.removeItem('warung_bumdes_v4');location.reload();}}
+
+
+
+function renderReturnOptions(){
+  if(!$('returnTx')) return;
+  const eligible=db.transactions.filter(t=>t.items?.some(i=>Number(i.qty)>0));
+  $('returnTx').innerHTML='<option value="">Pilih transaksi</option>'+eligible.map(t=>
+    `<option value="${t.id}">#${t.id} · ${new Date(t.date).toLocaleString('id-ID')} · ${rp(t.total)}</option>`).join('');
+  const tx=db.transactions.find(t=>String(t.id)===$('returnTx').value);
+  $('returnItem').innerHTML=tx?tx.items.map((i,idx)=>{
+    const already=db.returns.filter(r=>r.transactionId===tx.id&&r.itemIndex===idx).reduce((s,r)=>s+r.qty,0);
+    const remain=Math.max(0,i.qty-already);
+    return `<option value="${idx}" ${remain<=0?'disabled':''}>${esc(i.name)} · sisa ${remain}</option>`;
+  }).join(''):'<option value="">Pilih transaksi terlebih dahulu</option>';
+}
+function processReturn(){
+  if(!currentUser) return;
+  const tx=db.transactions.find(t=>String(t.id)===$('returnTx').value);
+  const idx=Number($('returnItem').value), q=Number($('returnQty').value)||0;
+  if(!tx || !tx.items?.[idx] || q<=0)return alert('Data retur belum lengkap.');
+  const item=tx.items[idx];
+  const already=db.returns.filter(r=>r.transactionId===tx.id&&r.itemIndex===idx).reduce((s,r)=>s+r.qty,0);
+  const remain=item.qty-already;
+  if(q>remain)return alert(`Maksimal retur untuk item ini ${remain}.`);
+  const p=db.products.find(x=>x.name===item.name);
+  if(!p)return alert('Produk asal tidak ditemukan.');
+  p.stock+=q;
+  const refund=item.sell*q;
+  db.returns.unshift({
+    id:Date.now(),date:new Date().toISOString(),transactionId:tx.id,itemIndex:idx,
+    product:item.name,qty:q,amount:refund,reason:$('returnReason').value.trim(),
+    user:currentUser.u
+  });
+  log('Retur penjualan',`${item.name} × ${q} · ${rp(refund)}`);
+  save(); renderAll();
+  $('returnMsg').innerHTML=`<div class="notice">Retur tersimpan: ${esc(item.name)} × ${q} · nilai ${rp(refund)}.</div>`;
+  $('returnReason').value=''; $('returnQty').value=1;
+  renderReturnOptions();
+}
+function renderReturns(){
+  if(!$('returnTable'))return;
+  $('returnTable').innerHTML=db.returns.length?`<div class="tablewrap"><table><thead><tr><th>Waktu</th><th>Transaksi</th><th>Produk</th><th>Qty</th><th>Nilai</th><th>Alasan</th><th>User</th></tr></thead><tbody>
+  ${db.returns.map(r=>`<tr><td>${new Date(r.date).toLocaleString('id-ID')}</td><td>#${r.transactionId}</td><td>${esc(r.product)}</td><td>${r.qty}</td><td>${rp(r.amount)}</td><td>${esc(r.reason||'-')}</td><td>${esc(r.user)}</td></tr>`).join('')}
+  </tbody></table></div>`:'<p class="muted">Belum ada retur.</p>';
+}
+
+function normalizeSearchText(v){
+  return String(v??'')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9\s]/g,' ')
+    .replace(/\s+/g,' ').trim();
+}
+function levenshtein(a,b){
+  a=String(a);b=String(b);
+  if(a===b)return 0;
+  if(!a)return b.length;if(!b)return a.length;
+  let prev=Array.from({length:b.length+1},(_,i)=>i);
+  for(let i=0;i<a.length;i++){
+    const cur=[i+1];
+    for(let j=0;j<b.length;j++){
+      cur[j+1]=Math.min(cur[j]+1,prev[j+1]+1,prev[j]+(a[i]===b[j]?0:1));
+    }
+    prev=cur;
+  }
+  return prev[b.length];
+}
+function smartProductSearch(query){
+  const q=normalizeSearchText(query);
+  if(!q) return db.products.map(p=>({p,score:0,why:'Semua produk'}));
+  const tokens=q.split(' ').filter(Boolean);
+  return db.products.map(p=>{
+    const name=normalizeSearchText(p.name), code=normalizeSearchText(p.code);
+    const words=name.split(' ').filter(Boolean);
+    let score=0, matched=[];
+    if(code===q) {score+=1000;matched.push('barcode tepat');}
+    else if(code.includes(q)) {score+=700;matched.push('barcode');}
+    if(name===q) {score+=900;matched.push('nama tepat');}
+    if(name.startsWith(q)) {score+=650;matched.push('nama depan');}
+    if(name.includes(q)) {score+=500;matched.push('nama mengandung');}
+
+    for(const token of tokens){
+      if(name.includes(token)){score+=180;matched.push(token);continue;}
+      let best=Infinity;
+      for(const w of words){
+        if(Math.min(token.length,w.length)<3) continue;
+        best=Math.min(best,levenshtein(token,w));
+      }
+      const threshold=token.length>=7?2:(token.length>=4?1:0);
+      if(best<=threshold){score+=120-(best*25);matched.push(`mirip "${token}"`);}
+    }
+    // Common Indonesian retail abbreviations / variants.
+    const aliases={
+      'indomie':'indomie','mie':'indomie','mi':'indomie',
+      'kopi':'kopi','air':'air','aqua':'air','mineral':'air',
+      'goreng':'goreng','sachet':'sachet'
+    };
+    for(const token of tokens){
+      if(aliases[token] && name.includes(aliases[token])) score+=70;
+    }
+    // Favor short, clean matches.
+    if(score>0) score-=Math.min(30,Math.max(0,name.length-q.length));
+    return {p,score,why:[...new Set(matched)].slice(0,3).join(', ')};
+  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score || a.p.name.localeCompare(b.p.name,'id'));
+}
+function renderProducts(){
+  if(!$('productTable')) return;
+  const q=($('productSearch')?.value||'').trim();
+  const ranked=smartProductSearch(q);
+  const isAdmin=currentUser?.role==='Admin';
+  $('productSearchInfo').textContent=q
+    ? `${ranked.length} produk ditemukan · hasil diurutkan berdasarkan kecocokan`
+    : `${db.products.length} produk · pencarian mendukung nama, barcode, singkatan, dan typo ringan`;
+
+  $('productTable').innerHTML=`<div class="tablewrap"><table><thead><tr><th>Barcode</th><th>Produk</th><th>Beli</th><th>Jual</th><th>Stok</th><th>Status</th><th>Kecocokan</th><th>Aksi</th></tr></thead><tbody>
+  ${ranked.map(x=>{const p=x.p;return `<tr>
+    <td>${esc(p.code||'-')}</td><td><b>${esc(p.name)}</b></td><td>${rp(p.buy)}</td><td>${rp(p.sell)}</td><td>${p.stock}</td>
+    <td><span class="pill ${p.stock<=p.min?'warn':''}">${p.stock<=p.min?'Menipis':'Aman'}</span></td>
+    <td class="compact">${esc(x.why||'Relevan')}</td>
+    <td>${isAdmin?`<button class="secondary" onclick="editProduct(${p.id})">Edit</button> <button class="danger" onclick="deleteProduct(${p.id})">Hapus</button>`:'-'}</td>
+  </tr>`}).join('')}
+  ${ranked.length?'':'<tr><td colspan="8"><span class="muted">Produk tidak ditemukan. Coba nama yang lebih pendek, barcode, atau ejaan yang mendekati.</span></td></tr>'}</tbody></table></div>`;
+}
+function clearProductSearch(){
+  if($('productSearch')) $('productSearch').value='';
+  renderProducts();
+}
+function initSmartProductSearch(){
+  const el=$('productSearch'); if(!el || el.dataset.smartReady) return;
+  el.dataset.smartReady='1';
+  el.addEventListener('input',()=>renderProducts());
+  el.addEventListener('keydown',e=>{if(e.key==='Escape')clearProductSearch();});
+}
+function renderSalesHistory(){
+  if(!$('salesHistoryTable')) return;
+  const q=($('salesSearch')?.value||'').trim().toLowerCase();
+  const f=$('salesFrom')?.value||'0000-01-01', t=$('salesTo')?.value||'9999-12-31';
+  const rows=db.transactions.filter(x=>{
+    const d=x.date.slice(0,10);
+    const hay=[x.customer,x.cashier,x.method,...(x.items||[]).map(i=>i.name)].join(' ').toLowerCase();
+    return d>=f&&d<=t&&(!q||hay.includes(q));
+  });
+  $('salesHistoryTable').innerHTML=rows.length?`
+    <div class="tablewrap"><table><thead><tr><th>Waktu</th><th>Barang</th><th>Metode</th><th>Pelanggan</th><th>Kasir</th><th>Total</th><th>Aksi</th></tr></thead>
+    <tbody>${rows.map(x=>`<tr>
+      <td>${new Date(x.date).toLocaleString('id-ID')}</td>
+      <td>${x.items.map(i=>esc(i.name)+' × '+i.qty).join('<br>')}</td>
+      <td>${esc(x.method)}</td><td>${esc(x.customer||'-')}</td><td>${esc(x.cashier||'-')}</td>
+      <td>${rp(x.total)}</td><td><button class="secondary" onclick="printReceipt(${x.id})">Struk</button></td>
+    </tr>`).join('')}</tbody></table></div>`
+    :'<p class="muted">Tidak ada transaksi yang cocok.</p>';
+}
+function renderAll(){
+ if(!currentUser) return;
+ const isAdmin=currentUser.role==='Admin';
+ document.querySelectorAll('#menu button[data-role]').forEach(b=>b.classList.toggle('hidden', b.dataset.role!==currentUser.role));
+ document.querySelectorAll('[data-admin-card]').forEach(x=>x.classList.toggle('hidden', !isAdmin));
+ $('productAdminPanel').classList.toggle('hidden', !isAdmin);
+ $('roleNotice').classList.remove('hidden');
+ $('roleNotice').innerHTML=isAdmin
+   ? '<b>Mode Admin:</b> Anda memiliki akses penuh untuk pengelolaan Warung BUMDes.'
+   : '<b>Mode Kasir:</b> Fokus pada transaksi, pelanggan, stok (lihat), dan laporan penjualan. Menu pengelolaan dikelola Admin.';
+ $('dashboardTitle').textContent=isAdmin?'Dashboard Admin':'Dashboard Kasir';
+ $('cashierRoleInfo').textContent=currentUser.role==='Kasir'?'Mode Kasir aktif — setiap transaksi otomatis mencatat nama kasir.':'Mode Admin — dapat memantau seluruh transaksi.';
+ $('shopTitle').textContent=db.settings.title||'WARUNG BUMDES';
+ $('setTitle').value=db.settings.title||'';$('setAddr').value=db.settings.addr||'';$('setPhone').value=db.settings.phone||'';
+ $('saleProduct').innerHTML=db.products.filter(p=>p.stock>0).map(p=>`<option value="${p.id}">${esc(p.name)} — ${rp(p.sell)} (stok ${p.stock})</option>`).join('');
+  $('saleProductList').innerHTML=db.products.filter(p=>p.stock>0).map(p=>`<option value="${esc(p.name)}"></option><option value="${esc(p.code||'')}"></option>`).join('');
+  if($('saleProductSearch')){
+    const s=$('saleProductSearch');
+    if(!s.dataset.ready){
+      s.dataset.ready='1';
+      s.addEventListener('input',()=>{
+        const q=normalizeSearchText(s.value);
+        const hit=smartProductSearch(q).find(x=>x.p.stock>0);
+        if(hit){$('saleProduct').value=String(hit.p.id);}
+      });
+    }
+  }
+ $('buyProduct').innerHTML=db.products.map(p=>`<option value="${p.id}">${p.name} (stok ${p.stock})</option>`).join('');
+ $('buySupplier').innerHTML='<option value="">Tanpa supplier</option>'+db.suppliers.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+ $('saleCustomer').innerHTML='<option value="">Tanpa pelanggan</option>'+db.customers.map(c=>`<option value="${c.id}">${c.name}${c.debt?' — '+rp(c.debt):''}</option>`).join('');
+ $('opProduct').innerHTML=db.products.map(p=>`<option value="${p.id}">${p.name} (stok ${p.stock})</option>`).join('');
+ let op=db.products.find(p=>p.id===$('opProduct').value);$('opSystem').value=op?op.stock:'';
+ $('opProduct').onchange=()=>{let q=db.products.find(p=>p.id===$('opProduct').value);$('opSystem').value=q?q.stock:'';};
+
+ renderProducts();
+ $('purchaseTable').innerHTML=`<table><tr><th>Tanggal</th><th>Produk</th><th>Qty</th><th>Harga Beli</th><th>Supplier</th></tr>${db.purchases.map(x=>`<tr><td>${new Date(x.date).toLocaleString('id-ID')}</td><td>${x.product}</td><td>${x.qty}</td><td>${rp(x.price)}</td><td>${x.supplier||'-'}</td></tr>`).join('')||'<tr><td colspan="5">Belum ada pembelian.</td></tr>'}</table>`;
+ $('customerTable').innerHTML=`<table><tr><th>Nama</th><th>HP</th><th>Piutang</th><th>Aksi</th></tr>${db.customers.map(c=>`<tr><td>${c.name}</td><td>${c.phone||'-'}</td><td>${rp(c.debt)}</td><td>${c.debt?`<button class="primary" onclick="payDebt(${c.id})">Bayar</button>`:''}</td></tr>`).join('')||'<tr><td colspan="4">Belum ada pelanggan.</td></tr>'}</table>`;
+ $('supplierTable').innerHTML=`<table><tr><th>Supplier</th><th>Kontak</th></tr>${db.suppliers.map(s=>`<tr><td>${s.name}</td><td>${s.contact||'-'}</td></tr>`).join('')||'<tr><td colspan="2">Belum ada supplier.</td></tr>'}</table>`;
+ $('financeTable').innerHTML=`<table><tr><th>Tanggal</th><th>Jenis</th><th>Kategori</th><th>Keterangan</th><th>Nominal</th></tr>${db.finance.map(f=>`<tr><td>${new Date(f.date).toLocaleString('id-ID')}</td><td>${f.type}</td><td>${f.category||'-'}</td><td>${f.note}</td><td>${rp(f.amount)}</td></tr>`).join('')||'<tr><td colspan="5">Belum ada catatan.</td></tr>'}</table>`;
+ $('opTable').innerHTML=db.opname.map(o=>`<div class="cartline"><span>${new Date(o.date).toLocaleString('id-ID')} — ${o.product}</span><b>${o.before} → ${o.physical} (${o.diff>=0?'+':''}${o.diff})</b></div>`).join('')||'<span class="muted">Belum ada opname.</span>';
+ $('userTable').innerHTML=`<table><tr><th>Username</th><th>Role</th><th>Aksi</th></tr>${db.users.map(u=>`<tr><td>${u.u}</td><td>${u.role}</td><td>${u.u!=='admin'?`<button class="danger" onclick="deleteUser('${u.u}')">Hapus</button>`:'Akun utama'}</td></tr>`).join('')}</table>`;
+
+ let ts=db.transactions.filter(x=>x.date.slice(0,10)===dateOnly()),om=ts.reduce((s,x)=>s+x.total,0),gross=ts.reduce((s,x)=>s+x.items.reduce((a,i)=>a+(i.sell-i.buy)*i.qty,0),0),expenses=db.finance.filter(x=>x.date.slice(0,10)===dateOnly()&&x.type==='Kas Keluar').reduce((s,x)=>s+x.amount,0),net=gross-expenses,fin=db.finance.reduce((s,x)=>s+(x.type==='Kas Masuk'?x.amount:-x.amount),0),debt=db.customers.reduce((s,x)=>s+x.debt,0);
+ $('dOmzet').textContent=rp(om);$('dGross').textContent=rp(gross);$('dNet').textContent=rp(net);$('dCash').textContent=rp(om+fin);$('dDebt').textContent=rp(debt);$('dLow').textContent=db.products.filter(p=>p.stock<=p.min).length;
+ let days=[];for(let i=6;i>=0;i--){let d=new Date();d.setDate(d.getDate()-i);let key=d.toISOString().slice(0,10),v=db.transactions.filter(x=>x.date.slice(0,10)===key).reduce((s,x)=>s+x.total,0);days.push(`<tr><td>${new Date(key+'T00:00:00').toLocaleDateString('id-ID')}</td><td>${rp(v)}</td></tr>`)}
+ $('weekTable').innerHTML='<table><tr><th>Tanggal</th><th>Omzet</th></tr>'+days.join('')+'</table>';
+ $('activity').innerHTML=db.activity.slice(0,10).map(a=>`<div class="cartline"><span>${new Date(a.date).toLocaleString('id-ID')}</span><b>${esc(a.action||a.text||'Aktivitas')} ${a.detail?`— ${esc(a.detail)}`:''}</b></div>`).join('')||'<span class="muted">Belum ada aktivitas.</span>';
+ renderCart();
+  initSmartProductSearch();
+  renderProducts();
+  renderSalesHistory();
+  renderReturnOptions();
+  renderReturns();
+}
+</script>
+</body>
+</html>
